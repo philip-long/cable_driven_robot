@@ -1,0 +1,14 @@
+roslaunch br_driver br_driver.launch robot_ip:=127.0.0.1 port:=50001 # launches the sim robot
+rosrun br_driver robot_simulator 127.0.0.1 50001
+
+Then we should launch tf_estim which 
+
+
+rosrun br_driver tf_estim # Estimates the Cartesian position
+
+rosrun br_driver tf_with_joint_gui.py  # Allows to set a desired joint position and/or tf transform
+									   # Also displays current motor position and estimated platform position					
+
+# I need another file that takes desired platform location and creates a trajectory of waypoints 
+
+I will modify trajectory controller to do that

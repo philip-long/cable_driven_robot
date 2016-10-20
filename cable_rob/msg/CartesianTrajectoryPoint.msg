@@ -1,0 +1,4 @@
+geometry_msgs/PoseStamped desired_pose
+geometry_msgs/TwistStamped desired_velocity
+geometry_msgs/AccelStamped desired_acceleration
+duration time_from_start

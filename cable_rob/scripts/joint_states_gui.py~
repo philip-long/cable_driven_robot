@@ -1,0 +1,163 @@
+#!/usr/bin/env python
+
+
+import roslib
+import rospy
+
+import tf
+
+from Tkinter import *
+import tkFileDialog
+
+import numpy as np
+from sensor_msgs.msg import JointState
+from threading import Thread
+# Beginning of main program   
+
+
+
+ 
+class jointgui():
+    
+    r=1
+    
+    pub=False
+
+    SCALE=10
+    rospy.init_node('joint_gui')
+    master = Tk()
+    master.title('joint gui controller')
+#    master.geometry('+%d+%d' % (24*SCALE, 18*SCALE))
+#    master.minsize(width=24*SCALE, height=18*SCALE)
+#    master.maxsize(width=24*SCALE, height=18*SCALE)
+    q_desired=8*[0.0]
+    torque=8*[0.0]
+    q_current=8*[0.0]
+    QInputs=[]
+    QOutputs=[]
+    q_label=[]       
+    
+    endthread=False # variable for ending the trhead
+    
+    
+    def __init__(self):
+        
+        
+        self.master.grid_columnconfigure(1, weight=2)
+        self.master.grid_columnconfigure(2, weight=2)
+        
+        labelText=StringVar()
+        labelText.set("Desired")
+        labelDir=Label(self.master, textvariable=labelText,height=1, font="-weight bold").grid(row=0,column=1) 
+        labelText=StringVar()
+        labelText.set("Current")
+        labelDir=Label(self.master, textvariable=labelText,height=1, font="-weight bold").grid(row=0,column=2) 
+        for i in range(8):
+            name="q"+str(i)
+            self.q_label.append(StringVar())                     
+            self.QOutputs.append(self.make_joint_display(i))
+            name="q"+str(i)
+            self.QInputs.append(self.make_entry_button(name))
+                          
+      
+        self.StartPublishingJointState=Button(text="Start publishing joint state",command=self.startpub).grid(row=1,column=3)
+        self.StopPublishingJointState=Button(text="Stop publishing joint state",command=self.stoppub).grid(row=2,column=3)
+        self.validatebutton=Button(text="Validate joint positions",command=self.joint_event).grid(row=3,column=3) 
+        self.quitbutton=Button(text="Quit",command=self.exit_gui,bg="red",activebackground="red").grid(row=4,column=3) 
+
+        
+#        self.v.set("hello")
+#        self.w=Label(self.master,textvariable=self.v,bg="white").grid(row=0,column=6)
+        
+        self.publisher = rospy.Publisher('/desired_joint_position', JointState, queue_size=5)
+        rospy.Subscriber('/joint_state', JointState,self.JointStateCallback)
+        self.publishInfo=False
+
+       
+    def JointStateCallback(self,msg):
+        
+        for i in range(8):
+            self.q_label[i].set(str(msg.position[i]))
+
+    def make_joint_display(self,i):     
+        self.q_label[i].set("Value")
+        labelDir2=Label(self.master, textvariable=self.q_label[i],height=1,width=10,bg="white").grid(row=self.r,column=2)        
+        return labelDir2 
+        
+    def make_entry_button(self,name): 
+        labelText=StringVar()
+        labelText.set(name)
+        labelDir=Label(self.master, textvariable=labelText,height=4).grid(row=self.r,column=0)        
+        directory=StringVar(None)
+        entry=Entry(self.master,textvariable=directory,width=10)
+        entry.grid(row=self.r,column=1)
+        self.r+=1      
+        return entry 
+ 
+    def start(self):
+        self.master.mainloop()
+    
+    def loop(self):
+        hz = 200
+        r = rospy.Rate(hz)
+        msg = JointState()
+        for i in range(8):
+            msg.name.append("q"+str(i+1))
+            
+        while not rospy.is_shutdown() and not self.endthread:
+            
+            msg.header.stamp=rospy.Time.now()
+            msg.position = 8 * [0.0]
+            msg.effort = 8 * [0.0]
+			self.torque[6]=10.51
+            for i in range(8):
+                msg.position[i]=self.q_desired[i]
+                msg.effort[i]=self.torque[i]
+            
+            if(self.publishInfo==True):
+                self.publisher.publish(msg)
+            self.master.update_idletasks()    
+            r.sleep()
+                
+                
+
+    def startpub(self):
+        self.publishInfo=True
+    def stoppub(self):
+        self.publishInfo=False     
+        
+    def joint_event(self):
+            try:
+                for i in range(8):
+                    self.q_desired[i]=float(self.QInputs[i].get())                    
+ 
+                    #self.v.set(str(self.q_desired[i]))
+#                self.q1=float(self.q1input.get())
+#                self.q2=float(self.q2input.get())
+#                self.q3=float(self.q3input.get())
+#                self.q4=float(self.q4input.get())
+#                self.q5=float(self.q5input.get())
+#                self.q6=float(self.q6input.get())
+#                self.q7=float(self.q7input.get())
+#                self.q8=float(self.q8input.get())                
+            except ValueError:
+                print "Bad input"
+            
+        
+    def exit_gui(self):
+       print "quiting gui"
+       self.endthread=True
+       self.master.destroy()
+       self.master.quit()
+        
+        
+
+if __name__ == '__main__':
+
+    gui=jointgui()    
+    Thread(target=gui.loop).start()
+    gui.start()
+    
+    
+    
+ 

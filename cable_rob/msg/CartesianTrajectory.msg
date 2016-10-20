@@ -1,0 +1,2 @@
+Header header
+CartesianTrajectoryPoint[] points

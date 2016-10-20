@@ -1,0 +1,38 @@
+#include <ros/ros.h>
+#include <stdlib.h>     /* srand, rand */
+#include "sensor_msgs/JointState.h"
+
+
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
+
+#include <visp/vpHomogeneousMatrix.h>
+
+#include <br_driver/CartesianTrajectory.h>
+#include <br_driver/CartesianTrajectoryPoint.h>
+
+
+#ifndef CABLE_ROBOT_CONTROLLER_H
+#define CABLE_ROBOT_CONTROLLER_H
+
+class controller_class
+{
+
+private:
+	ros::NodeHandle n;
+
+
+public: 
+
+std::vector<vpHomogeneousMatrix> get_attachment_parameters(
+        std::string param_name,ros::NodeHandle n);
+
+void printfM(vpHomogeneousMatrix M, const char *intro="Matrix");
+
+std::vector<double> calculate_cable_length(vpHomogeneousMatrix wTp,
+                                           std::vector<vpHomogeneousMatrix> pTbi,
+                                           std::vector<vpHomogeneousMatrix> wTai);
+
+
+}
+
