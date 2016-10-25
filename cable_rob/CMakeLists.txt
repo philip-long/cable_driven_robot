@@ -73,10 +73,12 @@ include_directories(
   )
 
 
-add_library(controller_class src/controller_class.cpp)
+add_library(controller_class src/controller_class.cpp include/cable_rob/controller_class.h )
 target_link_libraries(controller_class ${VISP_LIBRARIES})
 add_dependencies(controller_class cable_rob_gencpp)
 
+
+#add_library(${PROJECT_NAME} include/cable_rob/controller_class.h )
 
 ## Declare a C++ executable
 
@@ -107,4 +109,7 @@ target_link_libraries(tahir_torque_ctrl controller_class ${catkin_LIBRARIES} ${V
 
 add_executable(rviz_visual src/rviz_visual.cpp)
 target_link_libraries(rviz_visual controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
+
+add_executable(tahir_torque_ctrl_latest_working src/tahir_torque_ctrl_latest_working.cpp)
+target_link_libraries(tahir_torque_ctrl_latest_working controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
 
