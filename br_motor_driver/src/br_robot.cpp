@@ -22,7 +22,10 @@
 // Note as a test I can run it with python
 
 
-BRrobot::BRrobot(ros::NodeHandle nh_, std::string host, int reverse_port) : nh(nh_) ,REVERSE_PORT_(reverse_port)
+BRrobot::BRrobot(ros::NodeHandle nh_,
+                 int reverse_port,
+                 int number_of_cables) :
+    nh(nh_) ,REVERSE_PORT_(reverse_port),number_of_cables_(number_of_cables)
 {
     kill_signal=false;
     debug_=0;
@@ -66,22 +69,19 @@ BRrobot::BRrobot(ros::NodeHandle nh_, std::string host, int reverse_port) : nh(n
     robot_state_pub=nh.advertise<sensor_msgs::JointState>("/joint_state",1);
 
     // Names of joints
-    robot_state.name.push_back("q1");
-    robot_state.name.push_back("q2");
-    robot_state.name.push_back("q3");
-    robot_state.name.push_back("q4");
-    robot_state.name.push_back("q5");
-    robot_state.name.push_back("q6");
-    robot_state.name.push_back("q7");
-    robot_state.name.push_back("q8");
+    for (int i = 0; i < number_of_cables_; ++i) {
+        std::string joint_name="q"+boost::lexical_cast<std::string>(i+1);
+        robot_state.name.push_back(joint_name);
+    }
 
-    Motor_Control.resize(8);
+
+    Motor_Control.resize(number_of_cables_);
     All_Motor_Control=true;
 
 
-    robot_state.position.resize(8);
-    robot_state.velocity.resize(8);
-    robot_state.effort.resize(8);
+    robot_state.position.resize(number_of_cables_);
+    robot_state.velocity.resize(number_of_cables_);
+    robot_state.effort.resize(number_of_cables_);
 
     SetStatus(PENDING_CONNECTION);
 }
@@ -173,7 +173,7 @@ void BRrobot::readData() // function to start commuinication
         boost::algorithm::split_regex(strs, p, boost::regex("</PLC_ROS>"));
 
         for (int i = 0; i < strs.size()-1; ++i) {
-        //    std::cout<<"strs[ "<<i<<" ]= "<<strs[i]<<std::endl;
+            //    std::cout<<"strs[ "<<i<<" ]= "<<strs[i]<<std::endl;
             unpack_message(strs[i]);
         }
 
@@ -193,17 +193,17 @@ void BRrobot::unpack_message(std::string p)
 
     TiXmlElement* PLC_ROS=doc.FirstChildElement("PLC_ROS");
 
-  //  doc.Print();
+    //  doc.Print();
 
     // Looking under the PLC_ROS tag
     if(PLC_ROS)
     {
-    //    ROS_INFO("PLC_ROS exists");
+        //    ROS_INFO("PLC_ROS exists");
         TiXmlElement* Cables_FB=PLC_ROS->FirstChildElement("Cables_FB");
         // Looking under the Cable tag
         if(Cables_FB)
         {
-         //  ROS_INFO("Cables_FB exists");
+            //  ROS_INFO("Cables_FB exists");
             // Check control tabs
             TiXmlElement* All_Motors_Controlled=PLC_ROS->FirstChildElement("All_Motors_Controlled");
             if(All_Motors_Controlled)
@@ -213,7 +213,7 @@ void BRrobot::unpack_message(std::string p)
                 All_Motor_Control=bool_value;
             }
             // For each motor, get q qdot and tau, and control flag
-            for (int i = 0; i < 8; ++i) {
+            for (int i = 0; i < number_of_cables_; ++i) {
                 std::string element_name="Q"+
                         boost::lexical_cast<std::string>(i+1);
                 TiXmlElement* Qi=Cables_FB->FirstChildElement(element_name);
@@ -232,7 +232,7 @@ void BRrobot::unpack_message(std::string p)
                     }
                     if(Position_i)
                     {
-                       // std::cout<<"Getting position"<<std::endl;
+                        // std::cout<<"Getting position"<<std::endl;
                         check_attribute(Position_i->
                                         QueryFloatAttribute("V",&float_value));
                         robot_state.position[i]=float_value*pi/180.0;
@@ -276,69 +276,13 @@ void BRrobot::check_attribute(int attribute)
 }
 
 
-//void BRrobot::unpack_message(std::string p)
-//{
-
-//    TiXmlDocument doc;
-//    TiXmlElement* root;
-//    const char* pTest =doc.Parse(p.c_str(), 0, TIXML_ENCODING_UTF8);
-//    std::vector<std::string> data;
-//    data.push_back("Position");
-//    data.push_back("Velocity");
-//    data.push_back("Torque");
-
-//    for (int i = 0; i < 3; ++i) {
-//        root = doc.FirstChildElement( data[i]);
-//        if(root)
-//        {
-//            extract_robot_state(root,data[i]);
-//        }
-//    }
-//}
-
-//void BRrobot::extract_robot_state(TiXmlElement* root,std::string State)
-//{
-//    double d=-1.0;
-//    for (int counter =0; counter < 8; ++counter) {
-
-//        std::string value="q"+boost::lexical_cast<std::string>(counter+1);
-//        switch (root->QueryDoubleAttribute(value,&d)) {
-//        case TIXML_NO_ATTRIBUTE:
-//            std::cout<<"TIXML_NO_ATTRIBUTE"<<std::endl;
-//            break;
-//        case TIXML_WRONG_TYPE:
-//            std::cout<<"TIXML_WRONG_TYPE"<<std::endl;
-//            break;
-//        case 0:
-//            if(State=="Position")
-//            {
-//                robot_state.position[counter]=d;
-//            }
-//            else if(State=="Velocity")
-//            {
-//                robot_state.velocity[counter]=d;
-//            }
-//            else if(State=="Torque")
-//            {
-//                robot_state.effort[counter]=d;
-//            }
-//            else
-//            {
-//                ROS_ERROR("Error defining data type");
-//            }
-
-//            break;
-//        default:
-//            break;
-//        }
-//    }
-//}
 
 
 std::string BRrobot::pack_joint_message()
 {
-    double q[8]; // converted deviation joint position
-    double tau[8]; // converted torque
+    double q[number_of_cables_]; // converted deviation joint position
+    double tau[number_of_cables_]; // converted torque
+
     std::string message=" ";
     const double pi = 3.1415926535897; // B&R use degs, everyone else doesn't ;)
 
@@ -350,8 +294,8 @@ std::string BRrobot::pack_joint_message()
         {
             ROS_INFO_COND(debug_,"In if loop");
             // Assign Joints according to index
-            for (int i = 0; i < 8; ++i) {
-                for (int j = 0; j < 8; ++j) {
+            for (int i = 0; i < number_of_cables_; ++i) {
+                for (int j = 0; j < number_of_cables_; ++j) {
                     if(robot_state.name[i]==desired_joint_position.name[j])
                     {
 
@@ -378,13 +322,13 @@ std::string BRrobot::pack_joint_message()
 
 
 
-                     }
+                    }
                 }
             }
         }
         else // Assign Joints in simple manner
         {
-            for (int var = 0; var < 8; ++var) {
+            for (int var = 0; var < number_of_cables_; ++var) {
 
                 if(desired_joint_position.position.empty())
                 {
@@ -421,7 +365,7 @@ std::string BRrobot::pack_joint_message()
         doc.LinkEndChild(ROS_PLC);
         ROS_PLC->LinkEndChild(Cables_xml);
 
-        for (int i = 0; i < 8; ++i) {
+        for (int i = 0; i < number_of_cables_; ++i) {
             std::string element_name="Q"+
                     boost::lexical_cast<std::string>(i+1);
             TiXmlElement* Qi=new TiXmlElement(element_name);
@@ -438,7 +382,7 @@ std::string BRrobot::pack_joint_message()
 
 
         TiXmlPrinter printer;
-       // doc.Print();
+        // doc.Print();
         doc.Accept( &printer );
         message = printer.CStr();
         //std::cout<<"message "<<message<<std::endl;

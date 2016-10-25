@@ -29,6 +29,7 @@ private:
     bool keepalive_;
     bool debug_;
     int status; // Robot status
+    int number_of_cables_; // number of cables
 
     // Parsing functions
     void unpack_message(std::string buffer); // unpack message
@@ -38,7 +39,9 @@ private:
     void check_attribute(int attribute);
 
 public:
-    BRrobot(ros::NodeHandle nh_,std::string host, int reverse_port);
+    BRrobot(ros::NodeHandle nh_,
+            int reverse_port,
+            int number_of_cables=8);
 
     bool kill_signal;
     int incoming_sockfd_;

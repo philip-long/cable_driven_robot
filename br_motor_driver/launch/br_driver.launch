@@ -5,13 +5,11 @@
 <!--Rocket (grand robot); port 50010-->
 
   <!-- robot_ip: IP-address of the robot's socket-messaging server -->
-  <arg name="robot_ip" />
+  <arg name="robot_ip" default="127.0.0.1"/>
   <arg name="port" />
   <arg name="cables" default="8"/>
   <arg name="motor_ratio" default="0.02"/>
     
-  <!-- The max_velocity parameter is only used for debugging in the ur_driver. It's not related to actual velocity limits -->
-  <arg name="max_velocity" default="10.0"/> <!-- [rad/s] -->
     <param name="number_of_cables" type="int" value="$(arg cables)"/>
     <param name="drum_radius" type="double" value="$(arg motor_ratio)"/>
 

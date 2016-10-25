@@ -6,58 +6,48 @@
 
 int main(int argc, char **argv) {
 
-    bool use_sim_time = false;
-    std::string host;
-    int reverse_port;
-
+    std::string host; // A legacy varible that
     ros::init(argc, argv, "br_motor_driver");
     ros::NodeHandle nh;
     ros::AsyncSpinner spinner(3);
     int restart_connection=1; // if this parameter is 1, connection will restart automatically
+    int reverse_port;
+    int number_of_cables;
+    bool use_sim_time = false;
 
     if (ros::param::get("use_sim_time", use_sim_time)) {
         ROS_WARN("use_sim_time is set!!");
     }
 
-    if (!(ros::param::get("~robot_ip_address", host))) {
-        if (argc > 1) {
-            ROS_WARN(
-                        "Please set the parameter robot_ip_address instead of by command line"
-                        );
-            host = argv[1];
-        }
-        else {
-            ROS_ERROR(
-                        "Could not get robot ip. Supply it on parameter server as robot_ip"
-                        );
-            exit(1);
-        }
+    if (!(ros::param::get("~cables", number_of_cables))) {
+        ROS_WARN("Default to 8 cables!!");
+        number_of_cables=8;
+    }
 
+    if (!(ros::param::get("~robot_ip_address", host))) {
+        ROS_ERROR("Host ip specified but this value is unused");
+        host="127.0.0.1";
     }
 
     if ((ros::param::get("~/commuinication_port", reverse_port))) {
         if((reverse_port <= 0) or (reverse_port >= 65535)) {
-            ROS_WARN(
-                        "Reverse port value is not valid (Use number between 1 and 65534"
-                        );
+            ROS_WARN("Using default 50001 as port value is not valid (Not between 1 and 65534");
+            reverse_port = 50001;
         }
     }
     else
     {
-        ROS_WARN(
-                    "No port given default to 50001"
-                    );
+        ROS_WARN("No port given default to 50001" );
         reverse_port = 50001;
     }
 
-    BRrobot interface(nh,host, reverse_port);
+    // Initialise the class passing node, port and number of cables
+    BRrobot interface(nh,reverse_port,number_of_cables);
     spinner.start();
 
 
     while(ros::ok())
     {
-//        ROS_INFO("in loop");
-
         switch (interface.GetStatus()) {
         case interface.PENDING_CONNECTION:
             if(!interface.startCommuinication())
@@ -83,21 +73,9 @@ int main(int argc, char **argv) {
             ROS_INFO("Default case");
             break;
         }
-
-
-
     }
 
-
-
-
-
-
     ros::waitForShutdown();
-
     interface.halt(0);
-
     exit(0);
-
-
 }
