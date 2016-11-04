@@ -471,7 +471,7 @@ void BRrobot::stateMachine(int config)
     {
         switch (GetStatus()) {
         case PENDING_CONNECTION:
-            if(startCommuinication())
+            if(!startCommuinication())
             {
                 ROS_ERROR("Ros_ driver : Error on startup");
             }

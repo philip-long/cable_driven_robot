@@ -218,7 +218,7 @@ class jointgui():
             msg.header.stamp=rospy.Time.now()
             msg.position = 8 * [0.0]
             msg.effort = 8 * [0.0]
-            self.torque[6]=0.02
+            self.torque[6]=0.01
             for i in range(8):
                 msg.position[i]=self.q_desired[i]
                 msg.effort[i]=self.torque[i]
