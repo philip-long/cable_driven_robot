@@ -23,7 +23,7 @@ private:
     void readData();
     void writeData();  
     void statePublisher();
-    void stateMachine();
+    void stateMachine(int config);
 
     void JointDeviationCallback(const sensor_msgs::JointState::ConstPtr& msg);
 
@@ -33,17 +33,13 @@ private:
     int status; // Robot status
     int number_of_cables_; // number of cables
 
+
     // Parsing functions
     void unpack_message(std::string buffer); // unpack message
     void extract_robot_state(TiXmlElement* root,std::string State);
     std::string pack_joint_message(); // pack the message
 
     void check_attribute(int attribute);
-
-public:
-    BRrobot(ros::NodeHandle nh_,
-            int reverse_port,
-            int number_of_cables=8);
 
     bool kill_signal;
     int incoming_sockfd_;
@@ -64,6 +60,12 @@ public:
     bool startCommuinication();
     bool halt(int restart);
 
+public:
+    BRrobot(ros::NodeHandle nh_,
+            int reverse_port,
+            int number_of_cables=8);
+
+   int StartInterface(int config);
    enum robot_status {DISCONNECTED,CONNECTED,CONNECTING,DISCONNECTING,PENDING_CONNECTION};
 };
 

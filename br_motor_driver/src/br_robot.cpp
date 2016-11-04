@@ -77,12 +77,9 @@ BRrobot::BRrobot(ros::NodeHandle nh_,
 
     Motor_Control.resize(number_of_cables_);
     All_Motor_Control=true;
-
-
     robot_state.position.resize(number_of_cables_);
     robot_state.velocity.resize(number_of_cables_);
     robot_state.effort.resize(number_of_cables_);
-
     SetStatus(PENDING_CONNECTION);
 }
 
@@ -434,7 +431,6 @@ bool BRrobot::startCommuinication() // function to start commuinication
     readingThread_ = std::thread(&BRrobot::readData, this);
     writingThread_ = std::thread(&BRrobot::writeData, this);
     statePublisherThread_ = std::thread(&BRrobot::statePublisher, this);
-    stateMachineThread_ = std::thread(&BRrobot::stateMachine, this);
 
     SetStatus(robot_status::CONNECTED);
 
@@ -464,13 +460,43 @@ bool BRrobot::halt(int restart=0) // function to halt commuinication
     return true;
 }
 
-
-
-void BRrobot::stateMachine()
+int BRrobot::StartInterface(int config)
 {
+    stateMachineThread_ = std::thread(&BRrobot::stateMachine,this,config);
+}
 
-    // in here we do the state machine parameters
-
+void BRrobot::stateMachine(int config)
+{
+    while(ros::ok())
+    {
+        switch (GetStatus()) {
+        case PENDING_CONNECTION:
+            if(startCommuinication())
+            {
+                ROS_ERROR("Ros_ driver : Error on startup");
+            }
+            break;
+        case CONNECTED:
+            //ROS_INFO("Connected");
+            break;
+        case CONNECTING:
+            ROS_INFO("Connecting to Client");
+            break;
+        case DISCONNECTING:
+            ROS_INFO("Disconnecting Client");
+            halt(config);
+            break;
+        case DISCONNECTED:
+            ROS_INFO("Disconnected Client");
+            ros::Duration(0.1).sleep();
+            break;
+        default:
+            ROS_INFO("Default case");
+            break;
+        }
+    }
+    ros::waitForShutdown();
+    halt(0);
 }
 
 

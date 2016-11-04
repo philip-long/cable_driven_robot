@@ -2,15 +2,15 @@
 
 #include "ros/ros.h"
 #include <br_motor_driver/br_robot.h>
-#include <thread>
+
 
 int main(int argc, char **argv) {
-
-    std::string host; // A legacy varible that
     ros::init(argc, argv, "br_motor_driver");
     ros::NodeHandle nh;
-    ros::AsyncSpinner spinner(3);
-    int restart_connection=1; // if this parameter is 1, connection will restart automatically
+    ros::AsyncSpinner spinner(5);
+    spinner.start();
+
+    int config=1; // if this parameter is 1, connection will restart automatically
     int reverse_port;
     int number_of_cables;
 
@@ -30,42 +30,8 @@ int main(int argc, char **argv) {
         ROS_WARN("No port given default to 50001" );
         reverse_port = 50001;
     }
-
     // Initialise the class passing node, port and number of cables
     BRrobot interface(nh,reverse_port,number_of_cables);
-    spinner.start();
-
-
-    while(ros::ok())
-    {
-        switch (interface.GetStatus()) {
-        case interface.PENDING_CONNECTION:
-            if(!interface.startCommuinication())
-            {
-                ROS_ERROR("Ros_ driver : Error on startup");
-            }
-            break;
-        case interface.CONNECTED:
-            //ROS_INFO("Connected");
-            break;
-        case interface.CONNECTING:
-            ROS_INFO("Connecting to Client");
-            break;
-        case interface.DISCONNECTING:
-            ROS_INFO("Disconnecting Client");
-            interface.halt(restart_connection);
-            break;
-        case interface.DISCONNECTED:
-            ROS_INFO("Disconnected Client");
-            ros::Duration(0.1).sleep();
-            break;
-        default:
-            ROS_INFO("Default case");
-            break;
-        }
-    }
-
-    ros::waitForShutdown();
-    interface.halt(0);
-    exit(0);
+    interface.StartInterface(config);
+    ros::spin();
 }
