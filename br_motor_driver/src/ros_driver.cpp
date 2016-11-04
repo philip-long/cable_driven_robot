@@ -13,20 +13,10 @@ int main(int argc, char **argv) {
     int restart_connection=1; // if this parameter is 1, connection will restart automatically
     int reverse_port;
     int number_of_cables;
-    bool use_sim_time = false;
-
-    if (ros::param::get("use_sim_time", use_sim_time)) {
-        ROS_WARN("use_sim_time is set!!");
-    }
 
     if (!(ros::param::get("~cables", number_of_cables))) {
         ROS_WARN("Default to 8 cables!!");
         number_of_cables=8;
-    }
-
-    if (!(ros::param::get("~robot_ip_address", host))) {
-        ROS_ERROR("Host ip specified but this value is unused");
-        host="127.0.0.1";
     }
 
     if ((ros::param::get("~/commuinication_port", reverse_port))) {

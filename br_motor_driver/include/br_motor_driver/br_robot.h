@@ -18,10 +18,12 @@ private:
     std::thread readingThread_; // thread to read data
     std::thread writingThread_; // thread to write socket data
     std::thread statePublisherThread_; // thread to publish data
+    std::thread stateMachineThread_; // thread to publish data
 
     void readData();
     void writeData();  
     void statePublisher();
+    void stateMachine();
 
     void JointDeviationCallback(const sensor_msgs::JointState::ConstPtr& msg);
 

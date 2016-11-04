@@ -86,58 +86,6 @@ BRrobot::BRrobot(ros::NodeHandle nh_,
     SetStatus(PENDING_CONNECTION);
 }
 
-// Commuinication Functions
-
-bool BRrobot::startCommuinication() // function to start commuinication
-{
-    keepalive_=true;
-    int n;
-    struct sockaddr_in cli_addr;
-    socklen_t clilen;
-    // Put this part in another function
-    clilen = sizeof(cli_addr);
-    new_sockfd_= accept(incoming_sockfd_,
-                        (struct sockaddr *) &cli_addr,
-                        &clilen);
-    SetStatus(robot_status::CONNECTING);
-    if (new_sockfd_< 0){
-        ROS_ERROR("ERROR on accept");
-        SetStatus(robot_status::DISCONNECTED);
-        return false;
-    }
-    readingThread_ = std::thread(&BRrobot::readData, this);
-    writingThread_ = std::thread(&BRrobot::writeData, this);
-    statePublisherThread_ = std::thread(&BRrobot::statePublisher, this);
-
-    SetStatus(robot_status::CONNECTED);
-
-    return true;
-}
-
-bool BRrobot::halt(int restart=0) // function to halt commuinication
-{
-    keepalive_=false;
-    readingThread_.join();
-    writingThread_.join();
-    statePublisherThread_.join();
-    SetStatus(DISCONNECTED);
-
-    if(restart)
-    {
-        ROS_INFO("Restarting Connection");
-        SetStatus(PENDING_CONNECTION);
-    }
-    else
-    {
-        ROS_WARN("Closing Socket");
-        close(new_sockfd_);
-        close(incoming_sockfd_);
-    }
-
-    return true;
-}
-
-
 void BRrobot::readData() // function to start commuinication
 {
     int n;
@@ -461,6 +409,71 @@ void BRrobot::JointDeviationCallback(const sensor_msgs::JointState::ConstPtr& ms
     desired_joint_position=*msg; // joint is eqaul to the value pointed to by msg
     this->SetJointFlag(true); // Note that value has been receieved
 }
+
+
+
+// Commuinication Functions
+
+bool BRrobot::startCommuinication() // function to start commuinication
+{
+    keepalive_=true;
+    int n;
+    struct sockaddr_in cli_addr;
+    socklen_t clilen;
+    // Put this part in another function
+    clilen = sizeof(cli_addr);
+    new_sockfd_= accept(incoming_sockfd_,
+                        (struct sockaddr *) &cli_addr,
+                        &clilen);
+    SetStatus(robot_status::CONNECTING);
+    if (new_sockfd_< 0){
+        ROS_ERROR("ERROR on accept");
+        SetStatus(robot_status::DISCONNECTED);
+        return false;
+    }
+    readingThread_ = std::thread(&BRrobot::readData, this);
+    writingThread_ = std::thread(&BRrobot::writeData, this);
+    statePublisherThread_ = std::thread(&BRrobot::statePublisher, this);
+    stateMachineThread_ = std::thread(&BRrobot::stateMachine, this);
+
+    SetStatus(robot_status::CONNECTED);
+
+    return true;
+}
+
+bool BRrobot::halt(int restart=0) // function to halt commuinication
+{
+    keepalive_=false;
+    readingThread_.join();
+    writingThread_.join();
+    statePublisherThread_.join();
+    SetStatus(DISCONNECTED);
+
+    if(restart)
+    {
+        ROS_INFO("Restarting Connection");
+        SetStatus(PENDING_CONNECTION);
+    }
+    else
+    {
+        ROS_WARN("Closing Socket");
+        close(new_sockfd_);
+        close(incoming_sockfd_);
+    }
+
+    return true;
+}
+
+
+
+void BRrobot::stateMachine()
+{
+
+    // in here we do the state machine parameters
+
+}
+
+
 
 // ========= Get & Set Flags ========= //
 
