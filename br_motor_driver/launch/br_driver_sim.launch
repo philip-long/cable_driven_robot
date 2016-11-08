@@ -5,7 +5,6 @@
 <!--Rocket (grand robot); port 50010-->
 
   <!-- robot_ip: IP-address of the robot's socket-messaging server -->
-  <arg name="robot_ip" />
   <arg name="port" />
   <arg name="cables" default="8"/>
   <arg name="motor_ratio" default="0.02"/>
@@ -21,7 +20,6 @@
   <!-- driver -->
   <node name="ros_driver" pkg="br_motor_driver" type="ros_driver" output="screen" >
 
-    <param name="robot_ip_address" type="str" value="$(arg robot_ip)" />
     <param name="commuinication_port" type="int" value="$(arg port)" />
 
   </node>
