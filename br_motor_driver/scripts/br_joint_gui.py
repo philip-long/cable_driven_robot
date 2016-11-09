@@ -78,17 +78,20 @@ class jointgui():
             self.TorqueOutputs.append(self.make_joint_display(i,row_tau,column,self.torque_val))
             
             self.create_heading(i,row_head_2,column,name)
-            self.PositionInputs.append(self.make_entry_button(i,row_q_in,column))
-            self.VelocityInputs.append(self.make_entry_button(i,row_qdot_in,column))
-            self.TorqueInputs.append(self.make_entry_button(i,row_tau_in,column))
+            self.PositionInputs.append(self.make_entry_button(i,row_q_in,column,True))
+            self.VelocityInputs.append(self.make_entry_button(i,row_qdot_in,column,False))
+            self.TorqueInputs.append(self.make_entry_button(i,row_tau_in,column,True))
             column=column+1
      
-        self.main_heading(1,0,"Current Joint state")
-        self.main_heading(6,0,"Desired Joint state")   
-    def main_heading(self,r,c,name):
+        self.main_heading(1,0,"Current Joint state",False)
+        self.main_heading(6,0,"Desired Joint state",True)   
+    def main_heading(self,r,c,name,desired):
         labelText=StringVar()
         labelText.set(name)
-        labelDir=Label(self.Frame1, textvariable=labelText,height=1, width=20,font="-weight bold",bg="gray",relief=RAISED).grid(row=r,column=c, columnspan=3)
+        if(desired): 
+            labelDir=Label(self.Frame1, textvariable=labelText,height=1, width=20,font="-weight bold",bg="blue",relief=RAISED).grid(row=r,column=c, columnspan=3)
+        else:
+            labelDir=Label(self.Frame1, textvariable=labelText,height=1, width=20,font="-weight bold",bg="gray",relief=RAISED).grid(row=r,column=c, columnspan=3)
         
     def create_heading(self,i,r,c,name):
         labelText=StringVar()
@@ -100,9 +103,12 @@ class jointgui():
         Label_in_value_box=Label(self.Frame1, textvariable=q_val[i],relief=RIDGE,height=1,width=15,bg="white").grid(row=r,column=c)          
         return Label_in_value_box 
         
-    def make_entry_button(self,i,r,c): 
+    def make_entry_button(self,i,r,c,isControllable): 
         directory=StringVar(None)
-        entry=Entry(self.Frame1,textvariable=directory,width=15, relief=SUNKEN)
+        if(not isControllable):
+            entry=Entry(self.Frame1,textvariable=directory,width=15, relief=SUNKEN,bg="white")
+        else:
+            entry=Entry(self.Frame1,textvariable=directory,width=15, relief=SUNKEN,bg="blue")
         entry.insert(END,0.0)
         entry.grid(row=r,column=c)
         return entry 
@@ -132,7 +138,7 @@ class jointgui():
     # joint state callback showing current motor positions   
     def JointStateCallback(self,msg):         
         self.current_joint_state=msg
-        for i in range(8):
+        for i in range(self.number_of_cables):
             self.q_val[i].set(str(msg.position[i]))
             self.qdot_val[i].set(str(msg.velocity[i]))
             self.torque_val[i].set(str(msg.effort[i]))
@@ -142,7 +148,7 @@ class jointgui():
 
     def fill_event(self):
         try:
-            for i in range(8):
+            for i in range(self.number_of_cables):
                 self.PositionInputs[i].delete(0,END)
                 self.PositionInputs[i].insert(0,self.q_val[i].get())
                 self.VelocityInputs[i].delete(0,END)
@@ -156,8 +162,8 @@ class jointgui():
                   
     def joint_event(self):
         try:
-            for i in range(8):
-                self.q_desired[i]=float(self.PositionInputs[i].get())                    
+            for i in range(self.number_of_cables):
+                self.q_desired[i]=float(self.PositionInputs[i].get())
                 self.qdot_desired[i]=float(self.VelocityInputs[i].get())    
                 self.torque_desired[i]=float(self.TorqueInputs[i].get()) 
              
@@ -179,10 +185,10 @@ class jointgui():
             
         while not rospy.is_shutdown() and not self.endthread:
             msg.header.stamp=rospy.Time.now()
-            msg.position = 8 * [0.0]
-            msg.velocity = 8 * [0.0]
-            msg.effort = 8 * [0.0]
-            for i in range(8):
+            msg.position = self.number_of_cables * [0.0]
+            msg.velocity = self.number_of_cables * [0.0]
+            msg.effort = self.number_of_cables * [0.0]
+            for i in range(self.number_of_cables):
                 msg.position[i]=self.q_desired[i]
                 msg.velocity[i]=self.qdot_desired[i]
                 msg.effort[i]=self.torque_desired[i]

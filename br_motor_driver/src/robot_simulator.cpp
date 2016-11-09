@@ -107,6 +107,7 @@ std::string pack_message()
     TiXmlElement* ROS_PLC=new TiXmlElement("PLC_ROS");
     TiXmlElement* Cables_xml=new TiXmlElement("Cables_FB");
 
+
     doc.LinkEndChild(ROS_PLC);
     ROS_PLC->LinkEndChild(Cables_xml);
 
@@ -222,6 +223,8 @@ void read_message(int sockfd)
     std::string msg;
     char buffer[256];
     ROS_INFO("Pre loop");
+
+
     while(ros::ok())
     {
 

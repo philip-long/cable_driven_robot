@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
     int reverse_port;
     int number_of_cables;
 
-    if (!(ros::param::get("~cables", number_of_cables))) {
+    if (!(ros::param::get("number_of_cables", number_of_cables))) {
         ROS_WARN("Default to 8 cables!!");
         number_of_cables=8;
     }
