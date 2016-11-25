@@ -11,6 +11,7 @@ set(MSG_DEPS
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  roslib
   genmsg ${MSG_DEPS}
   cmake_modules
 )
@@ -21,7 +22,7 @@ find_package(TinyXML REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roscpp  roslib  ${MSG_DEPS} 
+  CATKIN_DEPENDS roscpp roslib  ${MSG_DEPS}
   DEPENDS  TinyXML
 )
 
@@ -64,6 +65,8 @@ add_library(${PROJECT_NAME} src/ros_driver.cpp include/br_motor_driver/br_robot.
 add_executable(ros_driver src/ros_driver.cpp)
 target_link_libraries(ros_driver br_robot ${catkin_LIBRARIES} ${TinyXML_LIBRARIES})
 
+add_executable(friction_identification src/friction_identification.cpp)
+target_link_libraries(friction_identification ${catkin_LIBRARIES} )
 
 add_executable(robot_simulator src/robot_simulator.cpp)
 target_link_libraries(robot_simulator ${catkin_LIBRARIES} ${TinyXML_LIBRARIES})

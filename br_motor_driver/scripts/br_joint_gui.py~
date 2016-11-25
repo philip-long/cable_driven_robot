@@ -79,7 +79,7 @@ class jointgui():
             
             self.create_heading(i,row_head_2,column,name)
             self.PositionInputs.append(self.make_entry_button(i,row_q_in,column,True))
-            self.VelocityInputs.append(self.make_entry_button(i,row_qdot_in,column,True))
+            self.VelocityInputs.append(self.make_entry_button(i,row_qdot_in,column,False))
             self.TorqueInputs.append(self.make_entry_button(i,row_tau_in,column,True))
             column=column+1
      

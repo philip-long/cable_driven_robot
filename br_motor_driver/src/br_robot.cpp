@@ -134,8 +134,6 @@ void BRrobot::unpack_message(std::string p)
     bool bool_value;
     float float_value;
 
-    const double pi = 3.1415926535897; // B&R use degs, everyone else doesn't ;)
-
     TiXmlElement* PLC_ROS=doc.FirstChildElement("PLC_ROS");
 
     //  doc.Print();
@@ -180,14 +178,16 @@ void BRrobot::unpack_message(std::string p)
                         // std::cout<<"Getting position"<<std::endl;
                         check_attribute(Position_i->
                                         QueryFloatAttribute("V",&float_value));
-                        robot_state.position[i]=float_value*pi/180.0;
+                        robot_state.position[i]=float_value*PI/180.0;
 
                     }
                     if(Velocity_i)
                     {
+                        // No need to include machine tick as
+                        // velocity is directly given
                         check_attribute(Velocity_i->
                                         QueryFloatAttribute("V",&float_value));
-                        robot_state.velocity[i]=float_value*pi/180.0;
+                        robot_state.velocity[i]=float_value*PI/180.0;
                     }
                     if(Torque_i)
                     {
@@ -227,9 +227,10 @@ std::string BRrobot::pack_joint_message()
 {
     double q[number_of_cables_]; // converted deviation joint position
     double tau[number_of_cables_]; // converted torque
+    double qdot[number_of_cables_]; // converted velocity
 
     std::string message=" ";
-    const double pi = 3.1415926535897; // B&R use degs, everyone else doesn't ;)
+
 
     if(desired_joint_position.position.size()==robot_state.position.size() || desired_joint_position.effort.size()==robot_state.position.size())
     {
@@ -251,7 +252,21 @@ std::string BRrobot::pack_joint_message()
                         }
                         else
                         {
-                            q[i]=desired_joint_position.position[j]*180/pi;
+                            // We receive an angle in radians
+                            // Convert to degrees
+                            q[i]=desired_joint_position.position[j]*180/PI;
+                        }
+
+                        if(desired_joint_position.velocity.empty())
+                        {
+                            ROS_WARN_COND(debug_,"No desired joint velocity given,defaulting 0");
+                            qdot[i]=0.0;
+                        }
+                        else
+                        {
+                            // We receive a velocity in radians s^{-1}
+                            // Convert to degree every TICK
+                            qdot[i]=desired_joint_position.velocity[j]*MACHINE_TICK*180/PI;
                         }
 
                         if(desired_joint_position.effort.empty())
@@ -282,10 +297,20 @@ std::string BRrobot::pack_joint_message()
                 }
                 else
                 {
-                    q[var]=desired_joint_position.position[var]*180/pi;
+                    q[var]=desired_joint_position.position[var]*180/PI;
                 }
 
-
+                if(desired_joint_position.velocity.empty())
+                {
+                    ROS_WARN_COND(debug_,"No desired velocity given,defaulting 0");
+                    qdot[var]=0.0;
+                }
+                else
+                {
+                    // We receive a velocity in radians s^{-1}
+                    // Convert to degree every TICK
+                    qdot[var]=desired_joint_position.velocity[var]*MACHINE_TICK*180/PI;
+                }
 
                 if(desired_joint_position.effort.empty())
                 {
@@ -296,8 +321,6 @@ std::string BRrobot::pack_joint_message()
                 {
                     tau[var]=desired_joint_position.effort[var];
                 }
-
-
 
             }
         }
@@ -315,13 +338,20 @@ std::string BRrobot::pack_joint_message()
                     boost::lexical_cast<std::string>(i+1);
             TiXmlElement* Qi=new TiXmlElement(element_name);
             TiXmlElement* Position=new TiXmlElement("Position");
+            TiXmlElement* Velocity=new TiXmlElement("Vitesse");
             TiXmlElement* Torque=new TiXmlElement("Couple");
+            // Assign Position
             floatvalue=q[i];
             Position->SetAttribute("V",boost::lexical_cast<std::string>(floatvalue));
+            // Assign Velocity
+            floatvalue=qdot[i];
+            Velocity->SetAttribute("V",boost::lexical_cast<std::string>(floatvalue));
+            // Assign Torque
             floatvalue=tau[i];
             Torque->SetAttribute("V",boost::lexical_cast<std::string>(floatvalue));
             Cables_xml->LinkEndChild(Qi);
             Qi->LinkEndChild(Position);
+            Qi->LinkEndChild(Velocity);
             Qi->LinkEndChild(Torque);
         }
 
@@ -391,7 +421,7 @@ void BRrobot::writeData() // function to start commuinication
 
 void BRrobot::statePublisher()
 {
-    ros::Rate r(200);
+    ros::Rate r(500);
     while(keepalive_ && ros::ok())
     {
         robot_state.header.stamp=ros::Time::now();

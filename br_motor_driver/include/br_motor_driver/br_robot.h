@@ -8,6 +8,10 @@
 #ifndef BR_ROBOT_H
 #define BR_ROBOT_H
 
+// B&R writes on axis every 2ms
+#define MACHINE_TICK 0.002
+#define PI 3.1415926535897
+
 class BRrobot
 {
 private:
