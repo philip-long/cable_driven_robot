@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
         number_of_cables=8;
     }
 
-    double step=0.01;
+    double step;
     double upper_limit;
     int buffer;
 
@@ -127,11 +127,8 @@ int main(int argc, char *argv[]) {
     MotorSet motors(number_of_cables,nh);
     motors.ParseData(argc,argv);
 
-    cout<<"==========================="<<endl;
-    cout<<"This step "<<step<<endl;
-    cout<<"upper_limit"<<upper_limit<<endl;
-    cout<<"buffer"<<buffer<<endl;
-    cout<<"==========================="<<endl;
+
+    ROS_INFO("Running %f tests", floor(upper_limit/step));
 
     motors.AssignTestSpeeds(step,upper_limit,step);
     motors.SetReadingsForMean(buffer);
@@ -141,17 +138,9 @@ int main(int argc, char *argv[]) {
     motors.StartMotors();
     motors.CloseFiles();
 
-
-    //    while(ros::ok())
-    //    {
-    //        r.sleep();
-    //        ros::spinOnce();
-    //    }
-
-
 }
 
-
+//-------------------------------------------------------
 // Class function
 void MotorSet::ParseData(int argc, char *argv[])
 {
