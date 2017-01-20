@@ -2,6 +2,7 @@
 #include <thread>
 #include <sensor_msgs/JointState.h>
 #include <vector>
+#include <algorithm>
 
 #include <tinyxml.h>
 
@@ -63,6 +64,9 @@ private:
     // Commuinication functions
     bool startCommuinication();
     bool halt(int restart);
+
+    std::vector<double> q_pack_,tau_pack_,qdot_pack_;
+
 
 public:
     BRrobot(ros::NodeHandle nh_,

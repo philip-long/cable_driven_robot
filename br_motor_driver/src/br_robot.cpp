@@ -10,8 +10,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 #include <boost/algorithm/string/regex.hpp>
-
-
 #include <tinyxml.h>
 
 
@@ -75,11 +73,20 @@ BRrobot::BRrobot(ros::NodeHandle nh_,
     }
 
 
+    // Try to do all resizing once in constructor
+
+    // Variables to receive from robot
     Motor_Control.resize(number_of_cables_);
     All_Motor_Control=true;
     robot_state.position.resize(number_of_cables_);
     robot_state.velocity.resize(number_of_cables_);
     robot_state.effort.resize(number_of_cables_);
+
+    // Variables to send to robot
+    q_pack_.resize(8);
+    tau_pack_.resize(8);
+    qdot_pack_.resize(8);
+
     SetStatus(PENDING_CONNECTION);
 }
 
@@ -198,6 +205,8 @@ void BRrobot::unpack_message(std::string p)
                 }
 
             }
+
+
         }
 
     }
@@ -220,110 +229,105 @@ void BRrobot::check_attribute(int attribute)
     }
 }
 
-
-
+double convert_to_degrees(double p)
+{
+    return p*180/PI;
+}
+double convert_to_degrees_per_tick(double p)
+{
+    return p*MACHINE_TICK*180/PI;
+}
 
 std::string BRrobot::pack_joint_message()
 {
+    // Allocate the memory once instead of each pack
+    // Also no need to use
     double q[number_of_cables_]; // converted deviation joint position
     double tau[number_of_cables_]; // converted torque
     double qdot[number_of_cables_]; // converted velocity
 
+    bool q_empty=false;
+    bool qdot_empty=false;
+    bool tau_empty=false;
     std::string message=" ";
 
-
-    if(desired_joint_position.position.size()==robot_state.position.size() || desired_joint_position.effort.size()==robot_state.position.size())
+    if(desired_joint_position.position.size()==robot_state.position.size()
+            || desired_joint_position.effort.size()==robot_state.position.size()
+            || desired_joint_position.velocity.size()==robot_state.position.size()
+            )
     {
+
+        if(desired_joint_position.position.empty())
+        {
+            ROS_WARN_COND(debug_,"No desired joint position given,defaulting 0");
+            std::fill(q_pack_.begin(), q_pack_.end(), 0.0);
+            q_empty=true;
+        }
+        if(desired_joint_position.velocity.empty())
+        {
+            ROS_WARN_COND(debug_,"No desired joint velocity given,defaulting 0");
+            std::fill(qdot_pack_.begin(), qdot_pack_.end(), 0.0);
+            qdot_empty=true;
+        }
+        if(desired_joint_position.effort.empty())
+        {
+            ROS_WARN_COND(debug_,"No desired joint torque given,defaulting 0");
+            std::fill(tau_pack_.begin(), tau_pack_.end(), 0.0);
+            tau_empty=true;
+        }
+
+
         ROS_INFO_COND(debug_,"joint name check");
 
+        // In the unlikely case the names are not correct
         if(desired_joint_position.name!=robot_state.name)
         {
-            ROS_INFO_COND(debug_,"In if loop");
-            // Assign Joints according to index
+            ROS_WARN("Desired Joint Position names do not match robot state names");
+            // Assign Joints according to name
             for (int i = 0; i < number_of_cables_; ++i) {
                 for (int j = 0; j < number_of_cables_; ++j) {
                     if(robot_state.name[i]==desired_joint_position.name[j])
                     {
-
-                        if(desired_joint_position.position.empty())
-                        {
-                            ROS_WARN_COND(debug_,"No desired joint position given,defaulting 0");
-                            q[i]=0.0;
-                        }
-                        else
-                        {
-                            // We receive an angle in radians
-                            // Convert to degrees
+                        if(!q_empty) {
                             q[i]=desired_joint_position.position[j]*180/PI;
                         }
 
-                        if(desired_joint_position.velocity.empty())
-                        {
-                            ROS_WARN_COND(debug_,"No desired joint velocity given,defaulting 0");
-                            qdot[i]=0.0;
-                        }
-                        else
-                        {
-                            // We receive a velocity in radians s^{-1}
-                            // Convert to degree every TICK
+                        if(!qdot_empty) {
                             qdot[i]=desired_joint_position.velocity[j]*MACHINE_TICK*180/PI;
                         }
 
-                        if(desired_joint_position.effort.empty())
-                        {
-                            ROS_WARN_COND(debug_,"No desired joint torque given,defaulting 0");
-                            tau[i]=0.0;
-                        }
-                        else
-                        {
+                        if(!tau_empty){
                             tau[i]=desired_joint_position.effort[j];
                         }
-
-
-
-
                     }
                 }
             }
         }
         else // Assign Joints in simple manner
         {
-            for (int var = 0; var < number_of_cables_; ++var) {
 
-                if(desired_joint_position.position.empty())
-                {
-                    ROS_WARN_COND(debug_,"No desired joint position given,defaulting 0");
-                    q[var]=0.0;
-                }
-                else
-                {
-                    q[var]=desired_joint_position.position[var]*180/PI;
-                }
+            if(!q_empty) {
+                std::transform(desired_joint_position.position.begin(),
+                               desired_joint_position.position.end(),
+                               q_pack_.begin(),
+                               convert_to_degrees);
+            }
 
-                if(desired_joint_position.velocity.empty())
-                {
-                    ROS_WARN_COND(debug_,"No desired velocity given,defaulting 0");
-                    qdot[var]=0.0;
-                }
-                else
-                {
-                    // We receive a velocity in radians s^{-1}
-                    // Convert to degree every TICK
-                    qdot[var]=desired_joint_position.velocity[var]*MACHINE_TICK*180/PI;
-                }
-
-                if(desired_joint_position.effort.empty())
-                {
-                    ROS_WARN_COND(debug_,"No desired joint torque given,defaulting 0");
-                    tau[var]=0.0;
-                }
-                else
-                {
-                    tau[var]=desired_joint_position.effort[var];
-                }
-
+            if(!qdot_empty) {
+                // We receive a velocity in radians s^{-1}
+                // Convert to degree every TICK
+                std::transform(desired_joint_position.velocity.begin(),
+                               desired_joint_position.velocity.end(),
+                               qdot_pack_.begin(),
+                               convert_to_degrees_per_tick);
+            }
+            if(!tau_empty){
+                tau_pack_=desired_joint_position.effort;
             }
         }
+
+
+
         ROS_INFO_COND(debug_,"Creating Document");
         float floatvalue;
         TiXmlDocument doc;
@@ -360,7 +364,6 @@ std::string BRrobot::pack_joint_message()
         // doc.Print();
         doc.Accept( &printer );
         message = printer.CStr();
-        //std::cout<<"message "<<message<<std::endl;
     }
     else
     {
@@ -368,7 +371,6 @@ std::string BRrobot::pack_joint_message()
         message="\0";
     }
     return message;
-
 }
 
 
@@ -557,5 +559,40 @@ void BRrobot::SetStatus(int s)
 
 
 
+// Pack message old code
 
 
+
+//            for (int var = 0; var < number_of_cables_; ++var) {
+
+//                if(desired_joint_position.position.empty())
+//                {
+//                    ROS_WARN_COND(debug_,"No desired joint position given,defaulting 0");
+//                    q[var]=0.0;
+//                }
+//                else
+//                {
+//                    q[var]=desired_joint_position.position[var]*180/PI;
+//                }
+
+//                if(desired_joint_position.velocity.empty())
+//                {
+//                    ROS_WARN_COND(debug_,"No desired velocity given,defaulting 0");
+//                    qdot[var]=0.0;
+//                }
+//                else
+//                {
+//                    // We receive a velocity in radians s^{-1}
+//                    // Convert to degree every TICK
+//                    qdot[var]=desired_joint_position.velocity[var]*MACHINE_TICK*180/PI;
+//                }
+
+//                if(desired_joint_position.effort.empty())
+//                {
+//                    ROS_WARN_COND(debug_,"No desired joint torque given,defaulting 0");
+//                    tau[var]=0.0;
+//                }
+//                else
+//                {
+//                    tau[var]=desired_joint_position.effort[var];
+//                }

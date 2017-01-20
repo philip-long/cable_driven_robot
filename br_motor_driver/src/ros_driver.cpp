@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
         ROS_WARN("No port given default to 50001" );
         reverse_port = 50001;
     }
+
     // Initialise the class passing node, port and number of cables
     BRrobot interface(nh,reverse_port,number_of_cables);
     interface.StartInterface(config);
