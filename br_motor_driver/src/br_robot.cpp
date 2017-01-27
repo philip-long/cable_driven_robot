@@ -242,9 +242,6 @@ std::string BRrobot::pack_joint_message()
 {
     // Allocate the memory once instead of each pack
     // Also no need to use
-    double q[number_of_cables_]; // converted deviation joint position
-    double tau[number_of_cables_]; // converted torque
-    double qdot[number_of_cables_]; // converted velocity
 
     bool q_empty=false;
     bool qdot_empty=false;
@@ -289,15 +286,15 @@ std::string BRrobot::pack_joint_message()
                     if(robot_state.name[i]==desired_joint_position.name[j])
                     {
                         if(!q_empty) {
-                            q[i]=desired_joint_position.position[j]*180/PI;
+                            q_pack_[i]=desired_joint_position.position[j]*180/PI;
                         }
 
                         if(!qdot_empty) {
-                            qdot[i]=desired_joint_position.velocity[j]*MACHINE_TICK*180/PI;
+                            qdot_pack_[i]=desired_joint_position.velocity[j]*MACHINE_TICK*180/PI;
                         }
 
                         if(!tau_empty){
-                            tau[i]=desired_joint_position.effort[j];
+                            tau_pack_[i]=desired_joint_position.effort[j];
                         }
                     }
                 }
@@ -345,13 +342,13 @@ std::string BRrobot::pack_joint_message()
             TiXmlElement* Velocity=new TiXmlElement("Vitesse");
             TiXmlElement* Torque=new TiXmlElement("Couple");
             // Assign Position
-            floatvalue=q[i];
+            floatvalue=q_pack_[i];
             Position->SetAttribute("V",boost::lexical_cast<std::string>(floatvalue));
             // Assign Velocity
-            floatvalue=qdot[i];
+            floatvalue=qdot_pack_[i];
             Velocity->SetAttribute("V",boost::lexical_cast<std::string>(floatvalue));
             // Assign Torque
-            floatvalue=tau[i];
+            floatvalue=tau_pack_[i];
             Torque->SetAttribute("V",boost::lexical_cast<std::string>(floatvalue));
             Cables_xml->LinkEndChild(Qi);
             Qi->LinkEndChild(Position);
@@ -361,7 +358,10 @@ std::string BRrobot::pack_joint_message()
 
 
         TiXmlPrinter printer;
-        // doc.Print();
+        if(debug_)
+        {
+            doc.Print();
+        }
         doc.Accept( &printer );
         message = printer.CStr();
     }
