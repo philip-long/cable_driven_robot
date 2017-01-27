@@ -72,30 +72,49 @@ public:
     bool CloseFiles();
 
 };
-
-
-
-// A function to parse input data and return motor set
-
-// A function to define the speeds at which we record values
-
+bool GetParameters(double& step,double& upper_limit,int& buffer,int& number_of_cables);
 
 int main(int argc, char *argv[]) {
+
     ros::init(argc, argv, "friction_identification");
     ros::NodeHandle nh;
     ros::AsyncSpinner spinner(5);
     ros::Rate r(500);
     ros::Publisher desired_joint_state=nh.advertise<sensor_msgs::JointState>("/desired_joint_position",1);
+    // Need to include roslib ro use ros::package::getPath
+    std::string results_path = ros::package::getPath("br_motor_driver")+"/results/friction";
+    cout<<results_path<<endl;
     spinner.start();
-    int number_of_cables;
+
+    double step,upper_limit;
+    int buffer,number_of_cables;
+
+    // Get parameters for tests
+    GetParameters(step,upper_limit,buffer,number_of_cables);
+
+    // Initiate object
+    MotorSet motors(number_of_cables,nh);
+    // Parse Data
+    motors.ParseData(argc,argv);
+
+    ROS_INFO("Running %f tests", floor(upper_limit/step));
+    motors.AssignTestSpeeds(step,upper_limit,step);
+    motors.SetReadingsForMean(buffer);
+    motors.SetFilePrefix(results_path);
+    motors.SetTimeout(20.0);
+    ROS_INFO("Start Motors");
+    motors.StartMotors();
+    motors.CloseFiles();
+
+}
+
+// function
+
+bool GetParameters(double& step,double& upper_limit,int& buffer,int& number_of_cables){
     if (!(ros::param::get("number_of_cables", number_of_cables))) {
         ROS_WARN("Default to 8 cables!!");
         number_of_cables=8;
     }
-
-    double step;
-    double upper_limit;
-    int buffer;
 
     if (!(ros::param::get("~step_size", step)) ) {
         step=0.01;
@@ -115,30 +134,9 @@ int main(int argc, char *argv[]) {
         buffer=100;
         ROS_WARN("Default buffer %d", buffer);
     }
-
-
-
-
-    // Need to include roslib ro use ros::package::getPath
-    std::string results_path = ros::package::getPath("br_motor_driver");
-    cout<<results_path<<endl;
-    results_path+="/results/friction";
-
-    MotorSet motors(number_of_cables,nh);
-    motors.ParseData(argc,argv);
-
-
-    ROS_INFO("Running %f tests", floor(upper_limit/step));
-
-    motors.AssignTestSpeeds(step,upper_limit,step);
-    motors.SetReadingsForMean(buffer);
-    motors.SetFilePrefix(results_path);
-    motors.SetTimeout(20.0);
-    ROS_INFO("Start Motors");
-    motors.StartMotors();
-    motors.CloseFiles();
-
 }
+
+
 
 //-------------------------------------------------------
 // Class function
@@ -194,10 +192,7 @@ void MotorSet::ParseData(int argc, char *argv[])
 
 void MotorSet::SetFilePrefix(std::string path)
 {
-
-
     for (int i = 0; i < motors.size(); ++i) {
-
         // allocate memory
         std::shared_ptr<ofstream> out(new std::ofstream);
         std::string name=path+"_"+boost::lexical_cast<std::string>(motors[i]);
@@ -218,6 +213,8 @@ bool MotorSet::CloseFiles(){
         ROS_INFO("Closing file for motor %d",motors[i]);
         file_lookup.find(motors[i])->second->close();
     }
+
+
     return true;
 }
 
