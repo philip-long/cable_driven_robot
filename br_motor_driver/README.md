@@ -1,0 +1,11 @@
+## How to launch robot
+
+Launch the robot
+1. roslaunch  br_motor_driver br_driver port:=<port number>
+
+Launch the gui
+2. rosrun  br_motor_driver br_joint_gui
+
+launch the friction identifier program
+
+3. rosrun  br_motor_driver friction_identification /_step:=<step> _buffer:=<buffer> \_upper\_limit:=<upper_limit>
