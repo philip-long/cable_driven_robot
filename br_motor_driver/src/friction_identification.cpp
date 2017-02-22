@@ -219,6 +219,7 @@ bool MotorSet::CloseFiles(){
 }
 
 void MotorSet::AssignTestSpeeds(double min_value,double max_value,double speed_step){
+    ROS_ASSERT(min_value<max_value);
     for (double i = min_value; i < max_value; i+=speed_step) {
         test_speeds.push_back(i);
         test_speeds.push_back(-i);
@@ -246,6 +247,22 @@ void MotorSet::StartMotors(){
     for (int speed_i = 0; speed_i < test_speeds.size(); ++speed_i) {
 
         ROS_INFO("Testing speed %f",test_speeds[speed_i]);
+// Slowing ramp up if speed 
+        if(fabs(test_speeds[speed_i])>10.0)
+        {
+            double current_speed=0.0,i=0.0;
+            while(fabs(current_speed)<fabs(test_speeds[speed_i]) && ros::ok())
+            {
+                current_speed=i*test_speeds[speed_i]/500.0;
+                std::fill(desired_state.velocity.begin(),desired_state.velocity.end(),current_speed);
+                i=i+1.0;
+//                ROS_INFO("Ramp Loop %f",current_speed);
+                r.sleep();
+                ros::spinOnce();
+            }
+        }
+
+
         std::fill(desired_state.velocity.begin(),desired_state.velocity.end(),test_speeds[speed_i]);
         vector<std::deque<double>> torques(number_of_cables_);
 
@@ -288,10 +305,10 @@ void MotorSet::StartMotors(){
                         else
                         {
                             ROS_INFO("Testing motor %d speed %f",i+1,test_speeds[speed_i]);
-                            cout<<"Buffer=["<<endl;
-                            for (int var = 0; var < torques[i].size(); ++var) {
-                                cout<<torques[i][var]<<endl;
-                            }
+//                            cout<<"Buffer=["<<endl;
+//                            for (int var = 0; var < torques[i].size(); ++var) {
+//                                cout<<torques[i][var]<<endl;
+//                            }
                             cout<<"]"<<endl;
                             torques[i].pop_back(); // remove oldest value
                             torques[i].push_front(joint_states.effort[i]); // add new value at the start

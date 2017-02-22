@@ -165,6 +165,12 @@ void check_attribute(int attribute)
 void unpack_message(std::string p)
 {
     TiXmlDocument doc;
+
+    std::cout<<"====================================="<<std::endl;
+    ROS_INFO("RECEIVED MESSAGE FROM DRIVER");
+    doc.Print();
+    std::cout<<"====================================="<<std::endl;
+
     const char* pTest =doc.Parse(p.c_str(), 0, TIXML_ENCODING_UTF8);
     bool bool_value;
     float float_value;

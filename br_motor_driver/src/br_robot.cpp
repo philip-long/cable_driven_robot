@@ -241,7 +241,6 @@ double convert_to_degrees_per_tick(double p)
 std::string BRrobot::pack_joint_message()
 {
     // Allocate the memory once instead of each pack
-    // Also no need to use
 
     bool q_empty=false;
     bool qdot_empty=false;
@@ -303,7 +302,9 @@ std::string BRrobot::pack_joint_message()
         else // Assign Joints in simple manner
         {
 
+            ROS_INFO_COND(debug_,"Assigning joints in simple manner");
             if(!q_empty) {
+                 ROS_INFO_COND(debug_,"Assign q_pack");
                 std::transform(desired_joint_position.position.begin(),
                                desired_joint_position.position.end(),
                                q_pack_.begin(),
@@ -313,12 +314,14 @@ std::string BRrobot::pack_joint_message()
             if(!qdot_empty) {
                 // We receive a velocity in radians s^{-1}
                 // Convert to degree every TICK
+                ROS_INFO_COND(debug_,"Assign qdot_pack");
                 std::transform(desired_joint_position.velocity.begin(),
                                desired_joint_position.velocity.end(),
                                qdot_pack_.begin(),
                                convert_to_degrees_per_tick);
             }
             if(!tau_empty){
+                ROS_INFO_COND(debug_,"Assign tau");
                 tau_pack_=desired_joint_position.effort;
             }
         }
@@ -388,7 +391,7 @@ void BRrobot::writeData() // function to start commuinication
     while(keepalive_ && ros::ok())
     {
         timeout.tv_sec = 0; //do this each loop as selects modifies timeout
-        timeout.tv_usec = 500000; // timeout of 0.5 sec
+        timeout.tv_usec = 5; // timeout of 0.5 sec
 
         select(new_sockfd_ + 1, &writefds, NULL, NULL, &timeout);
         boost::lexical_cast<std::string>(counter);
@@ -400,7 +403,7 @@ void BRrobot::writeData() // function to start commuinication
             SetJointFlag(false); // Reset the joint flag
 
             message=pack_joint_message();
-            //std::cout<<"Sending="<<message<<std::endl;
+
             msg=message.c_str();
 
 
