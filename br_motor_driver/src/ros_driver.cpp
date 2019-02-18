@@ -34,5 +34,5 @@ int main(int argc, char **argv) {
     // Initialise the class passing node, port and number of cables
     BRrobot interface(nh,reverse_port,number_of_cables);
     interface.StartInterface(config);
-    ros::spin();
+    ros::waitForShutdown();
 }
