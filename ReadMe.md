@@ -10,7 +10,7 @@ To launch a simple demo application (follow the order)
 ### Launch robot odemetry based on motor positions
 ` rosrun cable_rob tf_estim`
 
-### Launch a simple cartesian controller based on IKM
+### Launch a simple GUI
 `rosrun cable_rob tf_with_joint_gui.py`
 
 ### Launch a simple cartesian controller based on IKM
