@@ -7,7 +7,7 @@ To launch a simple demo application (follow the order)
 ### Launch driver and simulated robot
 `roslaunch br_motor_driver br_driver_sim.launch robot_ip:=127.0.0.1 port:=50001`
 
-### Launch robot odemetry based on motor positions
+### Launch robot odometry based on motor positions (integration of joint velocities)
 ` rosrun cable_rob tf_estim`
 
 ### Launch a simple GUI
