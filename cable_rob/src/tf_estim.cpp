@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
     ros::AsyncSpinner spinner(1);
     spinner.start();
-    ros::Rate r(100);
+    ros::Rate r(50);
     int number_of_cables;
     double ratio;//=0.00034906585039886593;
     nh.getParam("number_of_cables",number_of_cables);
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
     bool InitialStep=true;
     double tol=0.01; // tolerance is in metres
 
-    bool debug=true;
+    bool debug=false;
 
     while(!CableRobot.GetJointFlag()){
         r.sleep();
@@ -129,7 +129,6 @@ int main(int argc, char **argv) {
             wTp_last=wTp;
             last_joint_state=current_joint_state; // update last position
             l_last=l;
-            ROS_INFO("==================================================");
         }
 
 

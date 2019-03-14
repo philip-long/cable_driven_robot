@@ -86,14 +86,6 @@ add_dependencies(controller_class cable_rob_gencpp)
 add_executable(tf_estim src/tf_estim.cpp)
 target_link_libraries(tf_estim controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES} )
 
-set(NODE_NAME
-  tf_estim_reduced
-)
-
-add_executable(${NODE_NAME} src/${NODE_NAME}.cpp)
-target_link_libraries(${NODE_NAME} controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES} ) 
-
-
 
 add_executable(br_controller src/br_controller.cpp)
 target_link_libraries(br_controller controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
@@ -104,12 +96,9 @@ target_link_libraries(trajectory_controller controller_class ${catkin_LIBRARIES}
 add_executable(cartesian_controller src/cartesian_controller.cpp)
 target_link_libraries(cartesian_controller controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
 
-add_executable(tahir_torque_ctrl src/tahir_torque_ctrl.cpp)
-target_link_libraries(tahir_torque_ctrl controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
-
 add_executable(rviz_visual src/rviz_visual.cpp)
 target_link_libraries(rviz_visual controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
 
-add_executable(tahir_torque_ctrl_latest_working src/tahir_torque_ctrl_latest_working.cpp)
-target_link_libraries(tahir_torque_ctrl_latest_working controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
+add_executable(torque_ctrl src/torque_ctrl.cpp)
+target_link_libraries(torque_ctrl controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
 

@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
     ros::AsyncSpinner spinner(1);
     spinner.start();
-    ros::Rate r(50);
+    ros::Rate r(25);
     int number_of_cables;
 
     double ratio;
@@ -98,10 +98,10 @@ int main(int argc, char **argv) {
             CableRobot.GetDesiredPlatformTransformation(wTp_final); // Get desired Platform
             CableRobot.GetEstimatedPlatformTransformation(wTp_estimate); // Get Estimated Location
             CableRobot.CartesianError(wTp_final,wTp_estimate,Error); // obtain error between frames
-
+	    
             if(Error.euclideanNorm()>tol)
             {
-                ROS_INFO("Do trajectory between points");
+             
                 wTp_initial=wTp_estimate;
                 wTp_desired_last=wTp_estimate;
                 begin=ros::Time::now();
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
 
                 while(ros::ok() && current_time<timefinal)
                 {
-
+		    
                     // Get current joint position
                     CableRobot.GetRobotJointState(current_joint_position);
                     CableRobot.GetEstimatedPlatformTransformation(wTp_estimate); // Get Estimated Location
@@ -131,10 +131,10 @@ int main(int argc, char **argv) {
                     }
                     std::cout<<"]"<<std::endl;
 
-                    CableRobot.calculate_jacobian(J_lau);
-                    J_lau.print(std::cout,8," Laumary Jacobian = ");
-                    dl_jac= J_lau*dX;
-                    dl_jac.print(std::cout,8,"dl by jacobian= ");
+//                     CableRobot.calculate_jacobian(J_lau);
+//                     J_lau.print(std::cout,8," Laumary Jacobian = ");
+//                     dl_jac= J_lau*dX;
+//                     dl_jac.print(std::cout,8,"dl by jacobian= ");
 
                     CableRobot.printfM(wTp_initial,"wTp_initial(t)");
                     CableRobot.printfM(wTp_estimate,"wTp_estimate(t)");
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
                     CableRobot.printfM(wTp_desired,"wTp(t)");
                     // Convert to joint motor position
 
-                    std::cout<<"dl from motor calcutaion =["<<std::endl;
+                    std::cout<<"dq from motor calcutaion =["<<std::endl;
                     for (int i = 0; i < number_of_cables; ++i) {
                         current_cable_length=CableRobot.calculate_cable_length(wTp_estimate); // current_cable_length
                         desired_cable_length=CableRobot.calculate_cable_length(wTp_desired); // current_cable_length
@@ -152,38 +152,31 @@ int main(int argc, char **argv) {
                     std::cout<<"]"<<std::endl;
 
 
-                    dq=CableRobot.calculate_motor_change(wTp_desired,ratio);
+                  //  dq=CableRobot.calculate_motor_change(wTp_desired,ratio);
 
 
                     for (int i = 0; i < number_of_cables; ++i) {
                         desired_joint_position.position[i]=current_joint_position.position[i]+dq[i];
                     }
 
-//                    std::cout<<"desired_joint_position =["<<std::endl;
-//                    for (int i = 0; i < number_of_cables; ++i) {
-//                        std::cout<<desired_joint_position.position[i]<<std::endl;
-//                    }
-//                    std::cout<<"]"<<std::endl;
 
-//                    std::cout<<"current_joint_position =["<<std::endl;
-//                    for (int i = 0; i < number_of_cables; ++i) {
-//                        std::cout<<current_joint_position.position[i]<<std::endl;
-//                    }
-//                    std::cout<<"]"<<std::endl;
-
-                    std::cout<<"dq desired =["<<std::endl;
-                    for (int i = 0; i < number_of_cables; ++i) {
-                        std::cout<<dq[i]<<std::endl;
-                    }
-
-
-                    std::cout<<"]"<<std::endl;
+//                     std::cout<<"dq desired =["<<std::endl;
+//                     for (int i = 0; i < number_of_cables; ++i) {
+//                         std::cout<<dq[i]<<std::endl;
+//                     }
+// 
+// 
+//                     std::cout<<"]"<<std::endl;
 
                     wTp_desired_last=wTp_desired;
 
                     ROS_INFO("==================================================");
                     ROS_INFO("==================================================");
-
+	
+		    std::cout<<"Desired Joint Position"<<  desired_joint_position<<std::endl;
+		    std::cout<<"current_joint_position"<<  current_joint_position<<std::endl;
+		    
+		    
                     joint_deviation_publisher.publish(desired_joint_position);
                     r.sleep();
                     ros::spinOnce();
