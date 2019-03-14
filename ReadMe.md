@@ -13,8 +13,5 @@ To launch a simple demo application (follow the order)
 ### Launch a simple GUI
 `rosrun cable_rob tf_with_joint_gui.py`
 
-### Launch a simple cartesian controller based on IKM
-`rosrun cable_rob cartesian_controller`
-
 ### Launch rviz
 ` roslaunch cable_rob br_rviz.launch config:=true`

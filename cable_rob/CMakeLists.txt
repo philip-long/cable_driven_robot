@@ -87,15 +87,6 @@ add_executable(tf_estim src/tf_estim.cpp)
 target_link_libraries(tf_estim controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES} )
 
 
-add_executable(br_controller src/br_controller.cpp)
-target_link_libraries(br_controller controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
-
-add_executable(trajectory_controller src/trajectory_controller.cpp)
-target_link_libraries(trajectory_controller controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
-
-add_executable(cartesian_controller src/cartesian_controller.cpp)
-target_link_libraries(cartesian_controller controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
-
 add_executable(rviz_visual src/rviz_visual.cpp)
 target_link_libraries(rviz_visual controller_class ${catkin_LIBRARIES} ${VISP_LIBRARIES})
 
